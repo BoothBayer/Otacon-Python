@@ -17,6 +17,7 @@ with open('bot.conf') as json_file:
 	data = json.load(json_file)
 	ownerID = data['ownerID']
 	botToken = data['key']
+	comPrefix = data['prefix']
 #------------------
 
 class NoPrivateMessages(commands.CheckFailure):
@@ -40,7 +41,7 @@ def is_in_guild(guildId):
 	return commands.check(predicate)
 
 #declare command prefix
-bot = commands.Bot(command_prefix='$', case_insensitive=True)
+bot = commands.Bot(command_prefix=comPrefix, case_insensitive=True)
 
 @bot.command()
 @commands.is_owner()
@@ -72,15 +73,15 @@ for filename in os.listdir('./cogs'):
 @bot.command()
 @commands.is_owner()
 async def quit(ctx):
-	print("quitting")
-	logger.info("quitting")
+	print("==========Quitting==========")
+	logger.info("=============Quitting=============")
 	exit()
 
 @quit.error
 async def quit_error(ctx, error):
 	if isinstance(error, commands.CheckFailure):
 		await ctx.send('Failed Checks, you do not have the valid credentials')
-		logger.info('User attempted to quit bot')
+		logger.info('Someone attempted to quit bot')
 
 async def on_ready():
 	print("Bot is live")
