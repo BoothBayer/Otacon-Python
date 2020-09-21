@@ -2,6 +2,7 @@ import math
 import discord
 from discord.ext import commands
 import logging
+import random
 
 #---------Logging--------
 logger = logging.getLogger('discord')
@@ -19,7 +20,6 @@ logger.addHandler(handler)
 #-----------------------
 
 class TTT(commands.Cog):
-#add, remove, decide & send, post
 #model DICTIONARY: {key=uesrid values={userName, role} , ...}
 	def __init__(self,bot):
 		self.client = bot
@@ -27,25 +27,24 @@ class TTT(commands.Cog):
 	detectiveCount = 0
 	traitorCount = 0
 	innocentCount = 0
-	traitor_pct = 0.25
-	traitor_max = 5
+	traitor_pct = 0.25 #percentage of players that are traitors, and the chance of becoming one. Maybe I should make separate variables for this? who cares though
+	traitor_max = 5 #maximum amount of traitors in a game, maybe I should remove this or make it arbitrarily large, not enough feedback to know.
 	detective_pct = 0.13
 	detective_max = 2
-	detective_min_players = 5
+	detective_min_players = 5 #minimum amount of players for a detective to be put into the game
 	roleCoices = ["Innocent", "Traitor", "Detective"]
 	terr = {} #dictionary of persons (i.e. terrorirst)
-#	print(f'dic:{terr}')
+
+	@commands.command()
+	async def addVC(self, ctx):
+		logger.info("Running addVC")
+		users = ctx.message.author.voice.channel.members
+		for user in users:
+			self.terr[user.id] = {'name': user.display_name, 'role': 'Innocent'}
 	@commands.command()
 	async def addMe(self, ctx): #There is no check needed to see if the user is already in the list or not, because it would just overwrite their last dictionary entry
 		user = ctx.message.author
 		self.terr[user.id] = {'name': user.display_name, 'role': 'Innocent'}
-		self.terr[user.id + 1] = {'name': "Thing 1", 'role': 'Innocent'} #DELETE
-		self.terr[user.id + 2] = {'name': "Thing 2", 'role': 'Innocent'} #DELETE
-		self.terr[user.id + 3] = {'name': "Thing 3", 'role': 'Innocent'} #DELETE
-		self.terr[user.id + 4] = {'name': "Thing 4", 'role': 'Innocent'} #DELETE
-		self.terr[user.id + 5] = {'name': "Thing 5", 'role': 'Innocent'} #DELETE
-		for x in self.terr: #DELETE
-			print(f'{x} >>> {self.terr[x]}') #DELETE
 		await ctx.send(self.terr)
 		await ctx.send(f'{user.display_name} has been successfully added!')
 
@@ -85,6 +84,11 @@ class TTT(commands.Cog):
 		print(f'listPlayers: An unexecpted error has occurred:\n{error}')
 
 	@commands.command()
+	async def results(self,ctx):
+		for x in self.terr: #DELETE
+			print(f'{x} >>> {self.terr[x]}') #DELETE
+
+	@commands.command()
 	async def start(self,ctx):
 		if len(self.terr) < 4:
 			await ctx.send("Not enough player for a game, you require a minimum of 4")
@@ -92,26 +96,48 @@ class TTT(commands.Cog):
 		await ctx.send(f'I am distributing the roles, this may take a minute')
 		self.generateRoles(len(self.terr))
 
-	def generateRoles(totalPlayers):
+	@start.error
+	async def startError(self, ctx, error):
+		await ctx.send(f'start: An unexpected error has occurred:\n{error}')
+		logger.error(error)
+		printf(f'start: An unexpected error has ocurred:\n{error}')
+	def generateRoles(self, totalPlayers):
 		print("GENERATING ROLES")
 		logger.info("GENERATING ROLES")
 		#reset data
-		self.traitorCount = 0
-		self.innocentCount = 0
-		self.detectiveCount = 0
+		self.traitorCount = 0 #global variable that must be reset
+		self.innocentCount = 0 #global variable that must be reset
+		self.detectiveCount = 0 #gloabl variable that must be reset
+		detectives = 0 #used in while loop below
+		traitors = 0 #used in while loop below
 		#CALL TRAITOR AND DETECTIVE COUNT
 		self.traitorCount = self.getTraitorCount(totalPlayers)
 		self.detectiveCount = self.getDetectiveCount(totalPlayers)
 		print(f'There will be:\n{self.traitorCount} traitors\n{self.detectiveCount} detectives\n and the rest will be Innocent') #print into chat too?
-		x = 0
-		player = 0 #in C# it was -1...why? I need to investigate more
-		while (x < self.detectiveCount): #x is the amount of detectives currently had
-			player++ #iterate one player
-			if (player != (len(self.terr)-1)):
-				if 
 
-	def getTraitorCount(totalPlayers):
-		print("getTraitorCount")
+		while (detectives < self.detectiveCount):
+			for player in self.terr:
+				user = self.terr[player]
+				if (detectives >= self.detectiveCount):
+					break
+				ranNum = random.random()
+				if (ranNum <= self.detective_pct):
+					detectives += 1 #iterate one detective
+					user['role'] = 'Detective' #set the role
+
+		while (traitors < self.traitorCount): #keep iterating until we have no more traitors to assign; this is needed because the for loop will not repeat itself
+			for player in self.terr: #go through all players once
+				user = self.terr[player] #this is quick access variable for the dictionary, just for my ease
+				if (traitors >= self.traitorCount): #if we have reached and or exeeded the max amount of traitors, break
+					break
+				if (user['role'] == 'Innocent'): #Check if they do not have a role assigned to them already(e.g. "Detective")
+					ranNum = random.random() #generates a random number to decide if you are the traitor or not
+					if (ranNum <= self.traitor_pct): #check if they meet the requirements for lady fate
+						traitors += 1 #iterate one traitor
+						user['role'] = 'Traitor' #set the role
+
+	def getTraitorCount(self, totalPlayers):
+		print("\ngetTraitorCount\n")
 		logger.info("Getting Amount of Traitors")
 		traitorTotal = math.floor(totalPlayers * self.traitor_pct)
 		if ((traitorTotal >= 1) and (traitorTotal <= self.traitor_max)):
@@ -119,15 +145,26 @@ class TTT(commands.Cog):
 		else:
 			return 1
 
-	def getDetectiveCount(totalPlayers):
-		print("getDetectiveCount")
+	def getDetectiveCount(self, totalPlayers):
+		print("\ngetDetectiveCount\n")
 		logger.info("Getting amount of Detectives")
-		if (totalPlayers >= this.detective_min_players):
+		if (totalPlayers >= self.detective_min_players):
 			detectiveTotal = math.floor(totalPlayers * self.detective_pct)
 			if (detectiveTotal >= 1) and (detectiveTotal <= self.detective_max):
 				return detectiveTotal
 			else:
 				return 0
+
+	async def distributeRoles(self, players):
+		logger.info("Distributing Roles")
+		for player in players: #loop through all players
+			try:
+				user = players[player] #ease of access variable
+				member = await commands.MemberConverter().convert(ctx, str(player)) #Okay, so this is a doozie. This sets the variable member by converting the discord id into a string and then converting it in the member class. This is all just so we can send a dm.
+				dm = await member.create_dm() #open a dm
+				await dm.send(f"Hey {user['name']}, your role is {user['role']}") #send message with information into dm
+			except:
+				logger.error(f"Something went wrong while distributing roles, {players[player]['name']} did not receiver their message.")
 
 def setup(bot):
 	bot.add_cog(TTT(bot))
