@@ -29,6 +29,5 @@ class Basics(commands.Cog):
 		if isinstance(error, commands.CheckFailure):
 			await ctx.send("You aren't in the right guild buddy")
 
-u
 def setup(bot):
 	bot.add_cog(Basics(bot))
