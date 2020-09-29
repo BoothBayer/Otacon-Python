@@ -16,7 +16,7 @@ class Admin(commands.Cog):
 
 	@commands.command()
 	@commands.is_owner()
-	async def say(self,ctx,*,args):
+	async def say(self,ctx,*,args): #Does this even work? I can't recall testing it.
 		await ctx.send(args)
 	@say.error
 	async def sayError(self,ctx,error):

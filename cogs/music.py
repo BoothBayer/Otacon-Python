@@ -3,6 +3,7 @@ import discord
 import logging
 from discord.ext import commands
 import os
+import json
 #---------Logging--------
 logger = logging.getLogger('discord')
 logger.setLevel(logging.DEBUG)
@@ -10,6 +11,12 @@ handler = logging.FileHandler(filename='discord.log',encoding='utf-8', mode='w')
 handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(message)s)'))
 logger.addHandler(handler)
 #-----------------------
+
+#------JSON--------
+with open('bot.conf') as json_file:
+	data = json.load(json_file)
+	musicDir = data['musicDIR']
+#------------------
 
 class Music(commands.Cog):
 	def __init__(self,bot):
@@ -114,7 +121,7 @@ class Music(commands.Cog):
 
 	#------indexing music-------- #Do nested disctionaries where a number starting from 1 is the key and the data is another dictionary contaiing name, album=T/F, song = T/F or something of the sort
 	jukeDirec = {}
-	for root, dirs, files in os.walk('/home/sooth/Music/'):
+        for root, dirs, files in os.walk(musicDir): #'/home/sooth/Music/'):
 		count = 0
 		tempDic = {}
 		for item in files:
